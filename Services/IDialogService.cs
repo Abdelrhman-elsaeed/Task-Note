@@ -1,16 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TaskNote.Models;
 
 namespace TaskNote.Services
 {
-    public class CarryOverTaskItem
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string ProjectName { get; set; } = string.Empty;
-        public bool IsSelected { get; set; } = true;
-    }
-
     public interface IDialogService
     {
         Task<string?> ShowInputDialogAsync(string title, string message, string defaultText = "");
