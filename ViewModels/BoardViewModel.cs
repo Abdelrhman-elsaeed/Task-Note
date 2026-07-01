@@ -20,6 +20,7 @@ namespace TaskNote.ViewModels
         private readonly IRepository<Column> _columnRepository;
         private readonly IRepository<TaskItem> _taskRepository;
         private readonly IDialogService _dialogService;
+        private readonly ISidebarProjectLocator _sidebarProjectLocator;
         private readonly ILogger<BoardViewModel> _logger;
 
         private int _currentProjectId;
@@ -44,18 +45,16 @@ namespace TaskNote.ViewModels
             IRepository<Column> columnRepository,
             IRepository<TaskItem> taskRepository,
             IDialogService dialogService,
+            ISidebarProjectLocator sidebarProjectLocator,
             ILogger<BoardViewModel> logger)
         {
             _projectRepository = projectRepository;
             _columnRepository = columnRepository;
             _taskRepository = taskRepository;
             _dialogService = dialogService;
+            _sidebarProjectLocator = sidebarProjectLocator;
             _logger = logger;
         }
-
-        // Lazy accessor for MainViewModel to break the circular DI dependency.
-        private MainViewModel? MainViewModel =>
-            App.Host?.Services.GetService(typeof(MainViewModel)) as MainViewModel;
 
         /// <summary>
         /// Fires whenever tasks or columns are added, moved, edited, or deleted so that
@@ -135,18 +134,10 @@ namespace TaskNote.ViewModels
 
                 // 2) Update the live Project instance that the sidebar is bound to so
                 //    the TextBlock refreshes immediately via PropertyChanged.
-                var mainVm = MainViewModel;
-                if (mainVm != null)
+                var liveProject = _sidebarProjectLocator.FindById(_currentProjectId);
+                if (liveProject != null)
                 {
-                    var liveProject = mainVm.SidebarItems.OfType<Project>()
-                                            .FirstOrDefault(p => p.Id == _currentProjectId)
-                                        ?? mainVm.SidebarItems.OfType<Folder>()
-                                            .SelectMany(f => f.Projects)
-                                            .FirstOrDefault(p => p.Id == _currentProjectId);
-                    if (liveProject != null)
-                    {
-                        liveProject.Name = trimmed;
-                    }
+                    liveProject.Name = trimmed;
                 }
 
                 // 3) Update the header's own property.

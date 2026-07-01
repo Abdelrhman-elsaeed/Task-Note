@@ -13,7 +13,7 @@ using System.Windows;
 
 namespace TaskNote.ViewModels
 {
-    public partial class MainViewModel : ObservableObject, IDropTarget
+    public partial class MainViewModel : ObservableObject, IDropTarget, ISidebarProjectLocator
     {
         // Strip legacy date suffix " (yyyy-MM-dd)" from project names so the name and date are stored separately.
         private static readonly System.Text.RegularExpressions.Regex LegacyDateSuffixRegex =
@@ -92,6 +92,15 @@ namespace TaskNote.ViewModels
                     }
                 }
             }
+        }
+
+        public Project? FindById(int projectId)
+        {
+            return SidebarItems.OfType<Project>()
+                       .FirstOrDefault(p => p.Id == projectId)
+                   ?? SidebarItems.OfType<Folder>()
+                       .SelectMany(f => f.Projects)
+                       .FirstOrDefault(p => p.Id == projectId);
         }
 
         private void RebuildFilteredItems()
