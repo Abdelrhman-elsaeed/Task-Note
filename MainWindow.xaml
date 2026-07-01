@@ -1,0 +1,794 @@
+<Window x:Class="TaskNote.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskNote"
+        xmlns:views="clr-namespace:TaskNote.Views"
+        xmlns:vm="clr-namespace:TaskNote.ViewModels"
+        xmlns:models="clr-namespace:TaskNote.Models"
+        xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
+        xmlns:res="clr-namespace:TaskNote.Resources"
+        mc:Ignorable="d"
+        Title="TaskNote" Height="700" Width="1150"
+        MinHeight="620" MinWidth="940"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBackground}"
+        Icon="pack://application:,,,/Resources/app_icon.png"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Drag adorner for sidebar items (folder / project) -->
+        <DataTemplate x:Key="SidebarDragAdorner">
+            <Border Background="{DynamicResource AccentSubtle}"
+                    BorderBrush="{DynamicResource AccentColor}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10,6"
+                    Opacity="0.92">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentColor}"
+                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding Name}"
+                               FontFamily="{StaticResource MainFont}"
+                               FontSize="12" FontWeight="Medium"
+                               Foreground="{DynamicResource AccentColor}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <!-- Top tab navigation radio button style -->
+        <Style x:Key="TopTabRadioButton" TargetType="RadioButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="TabBorder"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0,0,0,2"
+                                Padding="16,8"
+                                Margin="0,0,16,0"
+                                Cursor="Hand">
+                            <TextBlock x:Name="TabText"
+                                       Text="{TemplateBinding Content}"
+                                       FontFamily="{StaticResource MainFont}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{DynamicResource AccentColor}"/>
+                                <Setter TargetName="TabText" Property="Foreground" Value="{DynamicResource AccentColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabText" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Column 0: Resizable & Collapsible Sidebar -->
+            <ColumnDefinition x:Name="SidebarColumn" MinWidth="160" MaxWidth="450">
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+                        <Setter Property="Width" Value="260"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSidebarCollapsed}" Value="True">
+                                <Setter Property="Width" Value="60"/>
+                                <Setter Property="MinWidth" Value="60"/>
+                                <Setter Property="MaxWidth" Value="60"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
+            <!-- Column 1: Grid Splitter -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Column 2: Main Content -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+             LEFT SIDEBAR
+        Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â -->
+        <Border Background="{DynamicResource SidebarBackground}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="0,0,1,0"
+                Grid.Column="0">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- brand header -->
+                    <RowDefinition Height="Auto"/>   <!-- section label + actions -->
+                    <RowDefinition Height="Auto"/>   <!-- search box -->
+                    <RowDefinition Height="*"/>      <!-- scrollable tree -->
+                    <RowDefinition Height="Auto"/>   <!-- timer -->
+                    <RowDefinition Height="Auto"/>   <!-- settings button -->
+                </Grid.RowDefinitions>
+
+                <!-- Ã¢â€â‚¬Ã¢â€â‚¬ Brand Header Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ -->
+                <Border Grid.Row="0"
+                        BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,14">
+                    <Grid>
+                        <!-- Logo & Title (hidden when collapsed) -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+                                    Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                            <Image Source="pack://application:,,,/Resources/app_icon.png"
+                                   Width="22" Height="22" Margin="0,0,9,0"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="TaskNote"
+                                       FontFamily="{StaticResource MainFont}"
+                                       FontSize="16" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Centered Logo (only visible when collapsed) -->
+                        <Image Source="pack://application:,,,/Resources/app_icon.png"
+                               Width="24" Height="24"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               HorizontalAlignment="Center"
+                               Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <!-- Toggle Collapse button (placed on the right when expanded, centered when collapsed) -->
+                        <Button Style="{StaticResource IconButton}"
+                                Padding="5"
+                                Command="{Binding ToggleSidebarCommand}"
+                                ToolTip="Collapse Sidebar"
+                                HorizontalAlignment="Right"
+                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                            <Path Data="M 12 5 L 5 12 L 12 19 M 19 5 L 12 12 L 19 19"
+                                  Stroke="{DynamicResource TextSecondary}"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Stretch="Uniform" Width="11" Height="11"/>
+                        </Button>
+                        <Button Style="{StaticResource IconButton}"
+                                Padding="5"
+                                Command="{Binding ToggleSidebarCommand}"
+                                ToolTip="Expand Sidebar"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Path Data="M 5 5 L 12 12 L 5 19 M 12 5 L 19 12 L 12 19"
+                                  Stroke="{DynamicResource TextSecondary}"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Stretch="Uniform" Width="11" Height="11"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ── Section Label + Add Buttons ────────────────── -->
+                <Grid Grid.Row="1" Margin="20,14,20,8"
+                      Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="PROJECTS"
+                               FontFamily="{StaticResource MainFont}"
+                               FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource TextTertiary}"
+                               VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <!-- Add Project -->
+                        <Button Style="{StaticResource IconButton}"
+                                Padding="5" Margin="0,0,2,0"
+                                Command="{Binding AddProjectCommand}"
+                                ToolTip="New project">
+                            <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                  Fill="{DynamicResource TextSecondary}"
+                                  Stretch="Uniform" Width="12" Height="12"/>
+                        </Button>
+                        <!-- Add Folder -->
+                        <Button Style="{StaticResource IconButton}"
+                                Padding="5"
+                                Command="{Binding AddFolderCommand}"
+                                ToolTip="New folder">
+                            <Path Data="M10,4 H4 C2.9,4 2,4.9 2,6 V18 C2,19.1 2.9,20 4,20 H20 C21.1,20 22,19.1 22,18 V8 C22,6.9 21.1,6 20,6 H12 L10,4 Z"
+                                  Fill="{DynamicResource TextSecondary}"
+                                  Stretch="Uniform" Width="13" Height="13"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ─ Search Box ────────────────────────────────────────── -->
+                <Grid Grid.Row="2" Margin="14,0,14,10"
+                      Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                    <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource SearchTextBox}"/>
+                </Grid>
+
+                <!-- ─ Scrollable Sidebar Items ────────────────────────── -->
+                <ScrollViewer Grid.Row="3"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Style="{StaticResource MinimalScrollViewer}"
+                              Padding="0,0,6,0">
+
+                    <ItemsControl ItemsSource="{Binding FilteredSidebarItems}"
+                                  Background="Transparent"
+                                  Padding="10,0,10,8"
+                                  dd:DragDrop.IsDragSource="True"
+                                  dd:DragDrop.IsDropTarget="True"
+                                  dd:DragDrop.DropHandler="{Binding}"
+                                  dd:DragDrop.DragAdornerTemplate="{StaticResource SidebarDragAdorner}"
+                                  dd:DragDrop.UseDefaultDragAdorner="False"
+                                  dd:DragDrop.UseDefaultEffectDataTemplate="True">
+
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+
+                        <ItemsControl.Resources>
+
+                            <!-- FOLDER TEMPLATE -->
+                            <DataTemplate DataType="{x:Type models:Folder}">
+                                <StackPanel Margin="0,1,0,1">
+
+                                    <!-- Folder row -->
+                                    <Border x:Name="FolderRow"
+                                            CornerRadius="8" Padding="6"
+                                            Background="Transparent"
+                                            Cursor="Hand"
+                                            MouseLeftButtonDown="FolderRow_MouseLeftButtonDown"
+                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Add Project" 
+                                                          Command="{Binding PlacementTarget.Tag.AddProjectToFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                                              Fill="{DynamicResource TextSecondary}"
+                                                              Stretch="Uniform" Width="10" Height="10"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Rename" 
+                                                          Command="{Binding PlacementTarget.Tag.RenameFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                                                              Fill="{DynamicResource TextSecondary}"
+                                                              Stretch="Uniform" Width="11" Height="11"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Delete Folder" 
+                                                          Command="{Binding PlacementTarget.Tag.DeleteFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          Foreground="{DynamicResource DangerColor}">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
+                                                              Fill="{DynamicResource DangerColor}"
+                                                              Stretch="Uniform" Width="8" Height="8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>  <!-- chevron -->
+                                                <ColumnDefinition Width="Auto"/>  <!-- folder icon -->
+                                                <ColumnDefinition Width="*"/>     <!-- name -->
+                                                <ColumnDefinition Width="Auto"/>  <!-- actions -->
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Chevron (rotate when expanded) -->
+                                            <Button Grid.Column="0"
+                                                    Padding="2"
+                                                    Width="20" Height="20"
+                                                    Margin="0,0,2,0"
+                                                    Command="{Binding DataContext.ToggleFolderExpandCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <Path Data="M 5 4 L 9 8 L 5 12"
+                                                      Stroke="{DynamicResource TextSecondary}"
+                                                      StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                      RenderTransformOrigin="0.5,0.5"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource BoolToRotationConverter}}"/>
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Button>
+
+                                            <!-- Folder icon -->
+                                            <Path Grid.Column="1"
+                                                  Data="M10,4 H4 C2.9,4 2,4.9 2,6 V18 C2,19.1 2.9,20 4,20 H20 C21.1,20 22,19.1 22,18 V8 C22,6.9 21.1,6 20,6 H12 L10,4 Z"
+                                                  Fill="{DynamicResource AccentColor}"
+                                                  Stretch="Uniform" Width="14" Height="14"
+                                                  VerticalAlignment="Center">
+                                                <Path.Style>
+                                                    <Style TargetType="Path">
+                                                        <Setter Property="Margin" Value="0,0,8,0"/>
+                                                        <Setter Property="Grid.ColumnSpan" Value="1"/>
+                                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                                <Setter Property="Margin" Value="0"/>
+                                                                <Setter Property="Grid.ColumnSpan" Value="4"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
+
+                                            <!-- Folder name: TextBlock (display) / TextBox (edit) -->
+                                            <Grid Grid.Column="2" VerticalAlignment="Center">
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Grid.Style>
+                                                <!-- Display -->
+                                                <TextBlock x:Name="FolderNameDisplay"
+                                                           Text="{Binding Name}"
+                                                           FontFamily="{StaticResource MainFont}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Visibility="{Binding IsFocused, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+                                                <!-- Rename edit -->
+                                                <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                         res:FocusBehavior.IsFocused="{Binding IsFocused, Mode=TwoWay}"
+                                                         Style="{StaticResource SeamlessTextBox}"
+                                                         FontFamily="{StaticResource MainFont}"
+                                                         FontSize="13" FontWeight="SemiBold"
+                                                         Foreground="{DynamicResource TextPrimary}"
+                                                         Visibility="{Binding IsFocused, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            </Grid>
+
+                                            <!-- Hover actions -->
+                                            <StackPanel x:Name="FolderActions"
+                                                        Grid.Column="3"
+                                                        Orientation="Horizontal"
+                                                        Visibility="Collapsed"
+                                                        Margin="4,0,0,0">
+                                                <!-- Add project to folder -->
+                                                <Button Style="{StaticResource IconButton}" Padding="4"
+                                                        Margin="0,0,1,0"
+                                                        Command="{Binding DataContext.AddProjectToFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Add project">
+                                                    <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                                          Fill="{DynamicResource TextSecondary}"
+                                                          Stretch="Uniform" Width="9" Height="9"/>
+                                                </Button>
+                                                <!-- Delete folder -->
+                                                <Button Style="{StaticResource DangerIconButton}" Padding="4"
+                                                        Command="{Binding DataContext.DeleteFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Delete folder">
+                                                    <Path Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
+                                                          Fill="{DynamicResource DangerColor}"
+                                                          Stretch="Uniform" Width="8" Height="8"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Child projects (collapsible) -->
+                                    <ItemsControl ItemsSource="{Binding Projects}"
+                                                  Margin="18,0,0,2">
+                                        <ItemsControl.Style>
+                                            <Style TargetType="ItemsControl">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsExpanded}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ItemsControl.Style>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ContentControl Content="{Binding}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- Hover trigger on the folder row -->
+                                <DataTemplate.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMouseOver, ElementName=FolderRow}" Value="True"/>
+                                            <Condition Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="FolderRow" Property="Background" Value="{DynamicResource SidebarHover}"/>
+                                        <Setter TargetName="FolderActions" Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+
+                            <!-- PROJECT TEMPLATE -->
+                            <DataTemplate DataType="{x:Type models:Project}">
+                                <Border x:Name="ProjectRow"
+                                        CornerRadius="8"
+                                        Padding="8,6,6,6"
+                                        Margin="0,1,0,1"
+                                        Background="Transparent"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="ProjectRow_MouseLeftButtonDown"
+                                        Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Add Project" 
+                                                      Command="{Binding PlacementTarget.Tag.AddProjectSiblingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                                          Fill="{DynamicResource TextSecondary}"
+                                                          Stretch="Uniform" Width="10" Height="10"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Rename" 
+                                                      Command="{Binding PlacementTarget.Tag.RenameProjectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                                                          Fill="{DynamicResource TextSecondary}"
+                                                          Stretch="Uniform" Width="11" Height="11"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator/>
+                                            <MenuItem Header="Delete Project" 
+                                                      Command="{Binding PlacementTarget.Tag.DeleteProjectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      Foreground="{DynamicResource DangerColor}">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
+                                                          Fill="{DynamicResource DangerColor}"
+                                                          Stretch="Uniform" Width="8" Height="8"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>  <!-- dot / icon -->
+                                            <ColumnDefinition Width="*"/>     <!-- name -->
+                                            <ColumnDefinition Width="Auto"/>  <!-- actions -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Accent dot (hidden when collapsed) -->
+                                        <Ellipse Grid.Column="0"
+                                                 Width="6" Height="6"
+                                                 Fill="{DynamicResource TextTertiary}"
+                                                 Margin="2,0,10,0"
+                                                 VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+
+                                        <!-- Project icon (only visible when collapsed) -->
+                                        <Path Data="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="13" Height="13"
+                                              Grid.Column="0" Grid.ColumnSpan="3"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                        <!-- Name + date metadata: TextBlock display / TextBox edit -->
+                                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <StackPanel Visibility="{Binding IsFocused, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontFamily="{StaticResource MainFont}"
+                                                           FontSize="13"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding TargetDate, StringFormat={}{0:MMM d, yyyy}}"
+                                                           FontFamily="{StaticResource MainFont}"
+                                                           FontSize="10"
+                                                           FontWeight="Medium"
+                                                           Foreground="{DynamicResource TextTertiary}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,1,0,0"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                     res:FocusBehavior.IsFocused="{Binding IsFocused, Mode=TwoWay}"
+                                                     Style="{StaticResource SeamlessTextBox}"
+                                                     FontFamily="{StaticResource MainFont}"
+                                                     FontSize="13"
+                                                     Foreground="{DynamicResource TextPrimary}"
+                                                     Visibility="{Binding IsFocused, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        </Grid>
+
+                                        <!-- Hover actions -->
+                                        <StackPanel x:Name="ProjectActions"
+                                                    Grid.Column="2"
+                                                    Orientation="Horizontal"
+                                                    Visibility="Collapsed"
+                                                    Margin="4,0,0,0">
+                                            <Button Style="{StaticResource DangerIconButton}" Padding="4"
+                                                    Command="{Binding DataContext.DeleteProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Delete project">
+                                                <Path Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
+                                                      Fill="{DynamicResource DangerColor}"
+                                                      Stretch="Uniform" Width="8" Height="8"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <DataTemplate.Triggers>
+                                    <!-- Hover state -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMouseOver, ElementName=ProjectRow}" Value="True"/>
+                                            <Condition Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="ProjectRow" Property="Background" Value="{DynamicResource SidebarHover}"/>
+                                        <Setter TargetName="ProjectActions" Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+
+                            </ItemsControl.Resources>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- — Timer Section ────────────────────────────────────────── -->
+                    <views:TimerView Grid.Row="4"
+                                     DataContext="{Binding TimerViewModel}"
+                                     Margin="16,0,16,0"
+                                     Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+
+                    <!-- — Settings Button ──────────────────────────────────────── -->
+                    <Border Grid.Row="5"
+                            BorderBrush="{DynamicResource BorderColor}"
+                            BorderThickness="0,1,0,0"
+                            Padding="14,10">
+                        <Grid>
+                            <!-- Expanded state -->
+                            <Grid Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <Button Style="{DynamicResource SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding ToggleSettingsCommand}"
+                                        Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Path Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="13" Height="13"
+                                              Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Settings" VerticalAlignment="Center"
+                                                   FontFamily="{StaticResource MainFont}"
+                                                   FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+                                    </StackPanel>
+                                </Button>
+                                
+                                <Button Grid.Column="1"
+                                        Style="{DynamicResource SecondaryButton}"
+                                        Width="34" Padding="0"
+                                        Command="{Binding ToggleThemeCommand}"
+                                        ToolTip="Toggle Theme">
+                                    <Grid>
+                                        <!-- Moon icon (shows in light mode) -->
+                                        <Path Data="M12.3 22h-.1c-5.5-.2-9.9-4.8-9.9-10.4C2.3 6 7 1.3 12.8 1.3c.5 0 1 .1 1.5.2c-2.4 2-3.8 4.9-3.8 8c0 4.6 3.6 8.4 8.1 8.8c.8.1 1.6.1 2.4-.2c-1.3 2.3-3.7 3.9-6.5 3.9h-2.2z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="13" Height="13"
+                                              Visibility="{Binding IsDarkMode, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+                                        <!-- Sun icon (shows in dark mode) -->
+                                        <Path Data="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5s5-2.24 5-5s-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0a.996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0a.996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.02.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm-12.37 1.06l-1.06 1.06a.996.996 0 1 0 1.41 1.41l1.06-1.06a.996.996 0 1 0-1.41-1.41zm13.43-13.43a.996.996 0 0 0-1.41-1.41l-1.06 1.06a.996.996 0 1 0 1.41 1.41l1.06-1.06z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="13" Height="13"
+                                              Visibility="{Binding IsDarkMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </Grid>
+                                </Button>
+                            </Grid>
+                            
+                            <!-- Collapsed state -->
+                            <StackPanel Orientation="Vertical"
+                                        Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Button Style="{DynamicResource IconButton}"
+                                        Command="{Binding ToggleThemeCommand}"
+                                        HorizontalAlignment="Center"
+                                        Width="36" Height="36" Margin="0,0,0,4"
+                                        ToolTip="Toggle Theme">
+                                    <Grid>
+                                        <Path Data="M12.3 22h-.1c-5.5-.2-9.9-4.8-9.9-10.4C2.3 6 7 1.3 12.8 1.3c.5 0 1 .1 1.5.2c-2.4 2-3.8 4.9-3.8 8c0 4.6 3.6 8.4 8.1 8.8c.8.1 1.6.1 2.4-.2c-1.3 2.3-3.7 3.9-6.5 3.9h-2.2z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="15" Height="15"
+                                              Visibility="{Binding IsDarkMode, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+                                        <Path Data="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5s5-2.24 5-5s-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0a.996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0a.996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.02.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm-12.37 1.06l-1.06 1.06a.996.996 0 1 0 1.41 1.41l1.06-1.06a.996.996 0 1 0-1.41-1.41zm13.43-13.43a.996.996 0 0 0-1.41-1.41l-1.06 1.06a.996.996 0 1 0 1.41 1.41l1.06-1.06z"
+                                              Fill="{DynamicResource TextSecondary}"
+                                              Stretch="Uniform" Width="15" Height="15"
+                                              Visibility="{Binding IsDarkMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </Grid>
+                                </Button>
+                                
+                                <Button Style="{DynamicResource IconButton}"
+                                        Command="{Binding ToggleSettingsCommand}"
+                                        HorizontalAlignment="Center"
+                                        Width="36" Height="36"
+                                        ToolTip="Settings">
+                                    <Path Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+                                          Fill="{DynamicResource TextSecondary}"
+                                          Stretch="Uniform" Width="16" Height="16"
+                                          VerticalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+            </Grid>
+        </Border>
+
+        <!-- Grid Splitter -->
+        <GridSplitter Grid.Column="1"
+                      Width="4"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="Transparent"
+                      Cursor="SizeWE"
+                      Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+
+        <!-- ==========================================
+             RIGHT MAIN CONTENT
+        ========================================== -->
+        <Grid Grid.Column="2" Background="{DynamicResource SidebarBackground}">
+            <TabControl Background="Transparent"
+                        BorderThickness="0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="FontFamily" Value="{StaticResource MainFont}"/>
+                        <Setter Property="FontSize" Value="14"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="16,8"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Margin" Value="0,0,16,0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabItem">
+                                    <Border Name="Border" Padding="{TemplateBinding Padding}" 
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}">
+                                        <ContentPresenter x:Name="ContentSite"
+                                                          VerticalAlignment="Center"
+                                                          HorizontalAlignment="Center"
+                                                          ContentSource="Header"
+                                                          Margin="0,2,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentColor}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style TargetType="TabControl">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabControl">
+                                    <Grid KeyboardNavigation.TabNavigation="Local">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1" Background="{DynamicResource SidebarBackground}">
+                                            <TabPanel x:Name="HeaderPanel"
+                                                      Panel.ZIndex="1"
+                                                      KeyboardNavigation.TabIndex="1"
+                                                      IsItemsHost="True"
+                                                      Margin="0,0,0,0"/>
+                                        </Border>
+                                        <Border x:Name="Border" Grid.Row="1" 
+                                                BorderThickness="0" 
+                                                Background="Transparent">
+                                            <ContentPresenter x:Name="PART_SelectedContentHost" 
+                                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                              ContentSource="SelectedContent" />
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabControl.Resources>
+
+                <TabItem Header="Task Board" 
+                         IsSelected="{Binding IsCalendarActive, Converter={StaticResource BooleanInverterConverter}, Mode=TwoWay}">
+                    <views:BoardView DataContext="{Binding BoardViewModel}"/>
+                </TabItem>
+                
+                <TabItem Header="Calendar Overview" 
+                         IsSelected="{Binding IsCalendarActive, Mode=TwoWay}">
+                    <views:CalendarView DataContext="{Binding CalendarViewModel}"/>
+                </TabItem>
+            </TabControl>
+
+            <!-- Settings overlay -->
+            <Grid Visibility="{Binding IsSettingsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                  Panel.ZIndex="99">
+                <!-- Click-outside-to-close backdrop -->
+                <Button Command="{Binding ToggleSettingsCommand}"
+                        Background="#66000000"
+                        BorderThickness="0"
+                        Focusable="False">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"/>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <!-- Settings card -->
+                <views:SettingsView DataContext="{Binding SettingsViewModel}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
+
+

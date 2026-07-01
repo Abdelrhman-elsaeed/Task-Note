@@ -1,0 +1,34 @@
+<Application x:Class="TaskNote.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TaskNote"
+             xmlns:res="clr-namespace:TaskNote.Resources"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Wpf.Ui 3.0+ Managed Theme and Controls Resources -->
+                <ui:ThemesDictionary Theme="Light" />
+                <ui:ControlsDictionary />
+                
+                <!-- Custom Theme Colors -->
+                <ResourceDictionary Source="Resources/LightTheme.xaml" />
+                
+                <!-- Custom App Style Overrides -->
+                <ResourceDictionary Source="Resources/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Global Converters -->
+            <res:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <res:HexToBrushConverter x:Key="HexToBrushConverter" />
+            <res:BooleanInverterConverter x:Key="BooleanInverterConverter" />
+            
+            <!-- System Integer Presets -->
+            <sys:Int32 x:Key="Int15">15</sys:Int32>
+            <sys:Int32 x:Key="Int25">25</sys:Int32>
+            <sys:Int32 x:Key="Int45">45</sys:Int32>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+
