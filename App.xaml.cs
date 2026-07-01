@@ -61,6 +61,7 @@ namespace TaskNote
                     services.AddSingleton<ITimerService, TimerService>();
                     services.AddSingleton<IDialogService, DialogService>();
                     services.AddSingleton<CarryOverService>();
+                    services.AddSingleton<ProjectService>();
 
                     services.AddDbContextFactory<AppDbContext>();
 

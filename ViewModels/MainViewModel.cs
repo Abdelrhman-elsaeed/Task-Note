@@ -31,6 +31,7 @@ namespace TaskNote.ViewModels
         private readonly ISettingsService _settingsService;
         private readonly IRepository<TaskItem> _taskRepository;
         private readonly CarryOverService _carryOverService;
+        private readonly ProjectService _projectService;
 
         [ObservableProperty]
         private CalendarViewModel _calendarViewModel;
@@ -137,6 +138,7 @@ namespace TaskNote.ViewModels
             ISettingsService settingsService,
             IRepository<TaskItem> taskRepository,
             CarryOverService carryOverService,
+            ProjectService projectService,
             CalendarViewModel calendarViewModel,
             BoardViewModel boardViewModel,
             TimerViewModel timerViewModel,
@@ -149,6 +151,7 @@ namespace TaskNote.ViewModels
             _settingsService = settingsService;
             _taskRepository = taskRepository;
             _carryOverService = carryOverService;
+            _projectService = projectService;
             _calendarViewModel = calendarViewModel;
             
             _boardViewModel = boardViewModel;
@@ -411,29 +414,13 @@ namespace TaskNote.ViewModels
         private async Task AddProjectAsync()
         {
             var maxOrder = SidebarItems.OfType<Project>().Any() ? SidebarItems.OfType<Project>().Max(p => p.OrderIndex) : -1;
-            var newProject = new Project
-            {
-                Name = "New Project",
-                OrderIndex = maxOrder + 1,
-                IsFocused = true,
-                TargetDate = DateTime.Today
-            };
-
-            await _projectRepository.AddAsync(newProject);
-
-            var c1 = new Column { Name = "To Do", OrderIndex = 0, ProjectId = newProject.Id, ColorHex = "#F0EFEA" };
-            var c2 = new Column { Name = "In Progress", OrderIndex = 1, ProjectId = newProject.Id, ColorHex = "#FAF2EB" };
-            var c3 = new Column { Name = "Done", OrderIndex = 2, ProjectId = newProject.Id, ColorHex = "#EBF6F0" };
-            
-            await _columnRepository.AddAsync(c1);
-            await _columnRepository.AddAsync(c2);
-            await _columnRepository.AddAsync(c3);
+            var newProjectId = await _projectService.CreateProjectShellAsync(folderId: null, nextOrderIndex: maxOrder + 1);
 
             await LoadSidebarItemsAsync();
 
-            var loaded = SidebarItems.OfType<Project>().FirstOrDefault(p => p.Id == newProject.Id) 
-                         ?? SidebarItems.OfType<Folder>().SelectMany(f => f.Projects).FirstOrDefault(p => p.Id == newProject.Id);
-            
+            var loaded = SidebarItems.OfType<Project>().FirstOrDefault(p => p.Id == newProjectId)
+                         ?? SidebarItems.OfType<Folder>().SelectMany(f => f.Projects).FirstOrDefault(p => p.Id == newProjectId);
+
             if (loaded != null)
             {
                 SelectedProject = loaded;
@@ -447,31 +434,14 @@ namespace TaskNote.ViewModels
             if (folder == null) return;
 
             var maxOrder = folder.Projects.Any() ? folder.Projects.Max(p => p.OrderIndex) : -1;
-            var newProject = new Project
-            {
-                Name = "New Project",
-                FolderId = folder.Id,
-                OrderIndex = maxOrder + 1,
-                IsFocused = true,
-                TargetDate = DateTime.Today
-            };
-
-            await _projectRepository.AddAsync(newProject);
-
-            var c1 = new Column { Name = "To Do", OrderIndex = 0, ProjectId = newProject.Id, ColorHex = "#F0EFEA" };
-            var c2 = new Column { Name = "In Progress", OrderIndex = 1, ProjectId = newProject.Id, ColorHex = "#FAF2EB" };
-            var c3 = new Column { Name = "Done", OrderIndex = 2, ProjectId = newProject.Id, ColorHex = "#EBF6F0" };
-            
-            await _columnRepository.AddAsync(c1);
-            await _columnRepository.AddAsync(c2);
-            await _columnRepository.AddAsync(c3);
+            var newProjectId = await _projectService.CreateProjectShellAsync(folderId: folder.Id, nextOrderIndex: maxOrder + 1);
 
             await LoadSidebarItemsAsync();
 
             var loadedFolder = SidebarItems.OfType<Folder>().FirstOrDefault(f => f.Id == folder.Id);
             if (loadedFolder != null)
             {
-                var loadedProj = loadedFolder.Projects.FirstOrDefault(p => p.Id == newProject.Id);
+                var loadedProj = loadedFolder.Projects.FirstOrDefault(p => p.Id == newProjectId);
                 if (loadedProj != null)
                 {
                     SelectedProject = loadedProj;
