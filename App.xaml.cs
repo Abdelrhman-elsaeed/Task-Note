@@ -60,6 +60,7 @@ namespace TaskNote
                     services.AddSingleton<IAudioService, AudioService>();
                     services.AddSingleton<ITimerService, TimerService>();
                     services.AddSingleton<IDialogService, DialogService>();
+                    services.AddSingleton<CarryOverService>();
 
                     services.AddDbContextFactory<AppDbContext>();
 
