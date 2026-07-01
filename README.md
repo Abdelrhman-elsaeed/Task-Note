@@ -296,7 +296,7 @@ Should produce `0 Warning(s), 0 Error(s)`. Run the app, exercise: create a proje
 
 ## License
 
-Proprietary. © Antigravity. All rights reserved.
+Proprietary. © Abdelrhman Elsaid. All rights reserved.
 
 ---
 
